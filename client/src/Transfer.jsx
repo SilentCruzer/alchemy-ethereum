@@ -2,7 +2,8 @@ import { useState } from "react";
 import server from "./server";
 import{ keccak256 } from "ethereum-cryptography/keccak";
 import  { utf8ToBytes, toHex } from "ethereum-cryptography/utils";
-import secp from "ethereum-cryptography/secp256k1";
+import {sign} from "ethereum-cryptography/secp256k1";
+import * as secp from "ethereum-cryptography/secp256k1";
 
 
 function Transfer({ address, setBalance, privateKey}) {
@@ -16,22 +17,24 @@ function Transfer({ address, setBalance, privateKey}) {
     return keccak256(utf8ToBytes(str));
   }
 
-  function sign(hash){
-    return secp.sign(hash,privateKey,{ recovered: true } );
-  }
-
   async function transfer(evt) {
     evt.preventDefault();
 
-    const signature = sign(hash("Transfer balance"));
+    const data = { sender: address, recipient, amount: parseInt(sendAmount)};
+    const hash = hash(JSON.stringify(data));
+
+    const signedObject = await secp.sign(hash, privateKey, { recovered: true });
+    const sig = Array.from(signedObject[0])
+    const recoveryBit = signedObject[1];
+
 
     try {
       const {
         data: { balance },
-      } = await server.post(`send`, {
-        sender: signature,
-        amount: parseInt(sendAmount),
-        recipient,
+      } = await server.post(`/send`, {
+        ...data,
+        signature: sig,
+        recovery: recoveryBit
       });
       setBalance(balance);
     } catch (ex) {

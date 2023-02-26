@@ -5,8 +5,8 @@ import { keccak256 } from "ethereum-cryptography/keccak";
 
 function Wallet({ address, setAddress, balance, setBalance, privateKey, setPrivateKey }) {
   async function onChange(evt) {
-    const privateKey = evt.target.value;
-    setPrivateKey(privateKey);
+    const privateKeyTmp = evt.target.value;
+    setPrivateKey(privateKeyTmp);
     const addressTmp = secp.getPublicKey(privateKey)
     setAddress(toHex(keccak256(addressTmp.slice(1)).slice(-20)))
     if (address) { 
